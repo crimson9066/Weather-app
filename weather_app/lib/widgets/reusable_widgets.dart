@@ -129,10 +129,33 @@ class ErrorMessageWidget extends StatelessWidget {
 }
 
 /// Loading indicator widget with smooth animation
-class LoadingWidget extends StatelessWidget {
+class LoadingWidget extends StatefulWidget {
   final String? message;
 
   const LoadingWidget({Key? key, this.message}) : super(key: key);
+
+  @override
+  State<LoadingWidget> createState() => _LoadingWidgetState();
+}
+
+class _LoadingWidgetState extends State<LoadingWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -141,22 +164,32 @@ class LoadingWidget extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              color: colorScheme.primary,
+          ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1.05).animate(
+              CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+            ),
+            child: SizedBox(
+              width: 56,
+              height: 56,
+              child: CircularProgressIndicator(
+                strokeWidth: 3,
+                color: colorScheme.primary,
+              ),
             ),
           ),
-          if (message != null) ...[
+          if (widget.message != null) ...[
             const SizedBox(height: 20),
-            Text(
-              message!,
-              style: TextStyle(
-                fontSize: 15,
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+            FadeTransition(
+              opacity: Tween<double>(begin: 0.7, end: 1.0).animate(
+                CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+              ),
+              child: Text(
+                widget.message!,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

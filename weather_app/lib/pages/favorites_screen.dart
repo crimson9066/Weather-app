@@ -53,7 +53,7 @@ class FavoritesScreen extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             itemCount: favorites.length,
             itemBuilder: (context, index) {
               final cityName = favorites[index];
@@ -67,16 +67,12 @@ class FavoritesScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                onRemove: () async {
-                  final storage = ref.read(storageServiceProvider);
-                  await storage.removeFavorite(cityName);
-                  ref.invalidate(favoriteCitiesProvider);
-                },
               );
             },
           );
         },
-        loading: () => const weather_widgets.LoadingWidget(message: 'Loading favorites...'),
+        loading: () => const weather_widgets.LoadingWidget(
+            message: 'Loading favorites...'),
         error: (error, stackTrace) => weather_widgets.ErrorMessageWidget(
           message: 'Error loading favorites: $error',
           onRetry: () {
@@ -88,64 +84,260 @@ class FavoritesScreen extends ConsumerWidget {
   }
 }
 
-/// Card widget for displaying favorite cities
+/// Card widget for displaying favorite cities with animations
 class FavoriteCard extends ConsumerWidget {
   final String cityName;
   final VoidCallback onTap;
-  final VoidCallback onRemove;
 
   const FavoriteCard({
     Key? key,
     required this.cityName,
     required this.onTap,
-    required this.onRemove,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherAsync = ref.watch(weatherProvider(cityName));
     final unit = ref.watch(temperatureUnitProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: ListTile(
-        onTap: onTap,
-        leading: weatherAsync.when(
-          data: (weather) => Image.network(
-            weather.iconUrl,
-            width: 40,
-            height: 40,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.cloud),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: _getWeatherGradient(weatherAsync, colorScheme),
           ),
-          loading: () => const SizedBox(
-            width: 40,
-            height: 40,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
             child: Padding(
-              padding: EdgeInsets.all(8),
-              child: CircularProgressIndicator(strokeWidth: 2),
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  // Weather Icon with animation
+                  weatherAsync.when(
+                    data: (weather) => TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: 1),
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: value,
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Image.network(
+                              weather.iconUrl,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(Icons.cloud, color: Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    loading: () => Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      ),
+                    ),
+                    error: (_, __) => Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.cloud_off, color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // City info
+                  Expanded(
+                    child: weatherAsync.when(
+                      data: (weather) {
+                        final tempUnit = unit == 'metric' ? '°C' : '°F';
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              cityName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${weather.temperature.toStringAsFixed(1)}$tempUnit',
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              weather.description.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white.withOpacity(0.9),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cityName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: 100,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ],
+                      ),
+                      error: (error, _) => Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cityName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Error loading weather',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.7),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Remove button
+                  Consumer(
+                    builder: (context, ref2, _) {
+                      return IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () async {
+                          final storage = ref2.read(storageServiceProvider);
+                          await storage.removeFavorite(cityName);
+                          ref2.invalidate(favoriteCitiesProvider);
+                          ref2.invalidate(isFavoriteProvider(cityName));
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-          error: (_, __) => const Icon(Icons.cloud_off),
-        ),
-        title: Text(cityName),
-        subtitle: weatherAsync.when(
-          data: (weather) {
-            final tempUnit = unit == 'metric' ? '°C' : '°F';
-            return Text(
-              '${weather.temperature.toStringAsFixed(1)}$tempUnit - ${weather.description}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            );
-          },
-          loading: () => const Text('Loading...'),
-          error: (error, _) => Text('Error: $error'),
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: onRemove,
         ),
       ),
+    );
+  }
+
+  /// Get gradient based on weather condition
+  LinearGradient _getWeatherGradient(
+      AsyncValue<dynamic> weatherAsync, ColorScheme colorScheme) {
+    if (weatherAsync.hasValue) {
+      final weather = weatherAsync.value;
+      final condition = weather.weatherMain.toLowerCase();
+
+      if (condition.contains('clear') || condition.contains('sunny')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFFFA726).withOpacity(0.8),
+            const Color(0xFFFF7043).withOpacity(0.8),
+          ],
+        );
+      } else if (condition.contains('rain')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF42A5F5).withOpacity(0.8),
+            const Color(0xFF1E88E5).withOpacity(0.8),
+          ],
+        );
+      } else if (condition.contains('cloud')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFB0BEC5).withOpacity(0.8),
+            const Color(0xFF78909C).withOpacity(0.8),
+          ],
+        );
+      } else if (condition.contains('snow')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFFE0F7FA).withOpacity(0.8),
+            const Color(0xFFB3E5FC).withOpacity(0.8),
+          ],
+        );
+      } else if (condition.contains('storm') || condition.contains('thunder')) {
+        return LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF455A64).withOpacity(0.8),
+            const Color(0xFF263238).withOpacity(0.8),
+          ],
+        );
+      }
+    }
+
+    // Default gradient
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        colorScheme.primary.withOpacity(0.7),
+        colorScheme.primaryContainer.withOpacity(0.7),
+      ],
     );
   }
 }

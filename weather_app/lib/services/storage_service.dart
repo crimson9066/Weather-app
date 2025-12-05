@@ -83,6 +83,13 @@ class StorageService {
     return _prefs.setString(_searchHistoryKey, jsonEncode(history));
   }
 
+  /// Remove a city from search history
+  Future<bool> removeFromSearchHistory(String cityName) async {
+    final history = await getSearchHistory();
+    history.removeWhere((city) => city == cityName);
+    return _prefs.setString(_searchHistoryKey, jsonEncode(history));
+  }
+
   /// Clear search history
   Future<bool> clearSearchHistory() {
     return _prefs.remove(_searchHistoryKey);

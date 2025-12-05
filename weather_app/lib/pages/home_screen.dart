@@ -16,6 +16,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   late TextEditingController _searchController;
   List<CitySuggestion> _suggestions = [];
   bool _showSuggestions = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -31,24 +32,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _onSearchChanged() {
-    if (_searchController.text.isEmpty) {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
       setState(() {
         _suggestions = [];
         _showSuggestions = false;
+        _isLoading = false;
       });
       return;
     }
 
-    _fetchSuggestions(_searchController.text);
+    // Show loading state and fetch suggestions immediately
+    setState(() => _isLoading = true);
+    _fetchSuggestions(query);
   }
 
   Future<void> _fetchSuggestions(String query) async {
-    final suggestions = await GeocodingService.getCitySuggestions(query);
-    if (mounted) {
-      setState(() {
-        _suggestions = suggestions;
-        _showSuggestions = suggestions.isNotEmpty;
-      });
+    try {
+      final suggestions = await GeocodingService.getCitySuggestions(query);
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+          _showSuggestions = suggestions.isNotEmpty;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -164,26 +176,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               constraints: const BoxConstraints(
                                 maxHeight: 300,
                               ),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: _suggestions.length,
-                                itemBuilder: (context, index) {
-                                  final suggestion = _suggestions[index];
-                                  return ListTile(
-                                    leading: Icon(Icons.location_city,
-                                        size: 18, color: colorScheme.primary),
-                                    title: Text(suggestion.name),
-                                    subtitle: Text(suggestion.country),
-                                    onTap: () {
-                                      _searchController.text = suggestion.name;
-                                      setState(() {
-                                        _showSuggestions = false;
-                                        _suggestions = [];
-                                      });
-                                      _selectCity(suggestion.name, ref);
-                                    },
-                                  );
-                                },
+                              child: _isLoading
+                                  ? Padding(
+                                      padding: const EdgeInsets.all(16),
+                                      child: SizedBox(
+                                        height: 40,
+                                        child: CircularProgressIndicator(
+                                          color: colorScheme.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: _suggestions.length,
+                                      itemBuilder: (context, index) {
+                                        final suggestion = _suggestions[index];
+                                        return ListTile(
+                                          leading: Icon(Icons.location_city,
+                                              size: 18,
+                                              color: colorScheme.primary),
+                                          title: Text(suggestion.name),
+                                          subtitle: Text(suggestion.country),
+                                          dense: true,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 4,
+                                          ),
+                                          onTap: () {
+                                            _searchController.text =
+                                                suggestion.name;
+                                            setState(() {
+                                              _showSuggestions = false;
+                                              _suggestions = [];
+                                            });
+                                            _selectCity(suggestion.name, ref);
+                                          },
+                                        );
+                                      },
+                                    ),
+                            ),
+                          ),
+                        ),
+                      // Loading indicator or error message
+                      if (_isLoading && _suggestions.isEmpty)
+                        Positioned(
+                          top: 56,
+                          left: 0,
+                          right: 0,
+                          child: Material(
+                            elevation: 8,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(12),
+                              bottomRight: Radius.circular(12),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface,
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(12),
+                                  bottomRight: Radius.circular(12),
+                                ),
+                              ),
+                              child: SizedBox(
+                                height: 40,
+                                child: CircularProgressIndicator(
+                                  color: colorScheme.primary,
+                                ),
                               ),
                             ),
                           ),
@@ -213,7 +273,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     onPressed: () => _selectCity(city, ref),
                     deleteIcon: const Icon(Icons.close),
                     onDeleted: () async {
-                      // Optionally implement history deletion
+                      // Remove from search history
+                      final storage = ref.read(storageServiceProvider);
+                      await storage.removeFromSearchHistory(city);
+                      ref.invalidate(searchHistoryProvider);
                     },
                     backgroundColor: colorScheme.primaryContainer,
                     labelStyle: TextStyle(

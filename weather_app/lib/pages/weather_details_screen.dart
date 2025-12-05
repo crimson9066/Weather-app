@@ -93,45 +93,55 @@ class _WeatherDetailsScreenState extends ConsumerState<WeatherDetailsScreen> {
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        colorScheme.primary.withOpacity(0.8),
-                        colorScheme.primaryContainer.withOpacity(0.6),
-                      ],
-                    ),
+                    gradient:
+                        _getWeatherGradient(weather.weatherMain, colorScheme),
                   ),
                   padding:
                       const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
                   child: Column(
                     children: [
-                      // Weather icon
-                      Container(
-                        width: 140,
-                        height: 140,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Image.network(
-                          weather.iconUrl,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                              Icons.cloud,
-                              size: 80,
-                              color: colorScheme.onPrimary),
-                        ),
+                      // Weather icon with animation
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: const Duration(milliseconds: 800),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: Container(
+                              width: 140,
+                              height: 140,
+                              decoration: BoxDecoration(
+                                color: colorScheme.surface.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: Image.network(
+                                weather.iconUrl,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.cloud,
+                                        size: 80, color: colorScheme.onPrimary),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 20),
 
-                      // Temperature
-                      Text(
-                        '${weather.temperature.toStringAsFixed(1)}$tempUnit',
-                        style: TextStyle(
-                          fontSize: 60,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onPrimary,
-                        ),
+                      // Temperature with animation
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: weather.temperature),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeOut,
+                        builder: (context, value, child) {
+                          return Text(
+                            '${value.toStringAsFixed(0)}$tempUnit',
+                            style: TextStyle(
+                              fontSize: 60,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onPrimary,
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: 8),
 
@@ -437,6 +447,70 @@ class _WeatherDetailsScreenState extends ConsumerState<WeatherDetailsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Get gradient based on weather condition
+  LinearGradient _getWeatherGradient(
+      String condition, ColorScheme colorScheme) {
+    final conditionLower = condition.toLowerCase();
+
+    if (conditionLower.contains('clear') || conditionLower.contains('sunny')) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFFFFA726).withOpacity(0.9),
+          const Color(0xFFFF7043).withOpacity(0.8),
+        ],
+      );
+    } else if (conditionLower.contains('rain')) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF42A5F5).withOpacity(0.9),
+          const Color(0xFF1E88E5).withOpacity(0.8),
+        ],
+      );
+    } else if (conditionLower.contains('cloud')) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFFB0BEC5).withOpacity(0.9),
+          const Color(0xFF78909C).withOpacity(0.8),
+        ],
+      );
+    } else if (conditionLower.contains('snow')) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFFE0F7FA).withOpacity(0.9),
+          const Color(0xFFB3E5FC).withOpacity(0.8),
+        ],
+      );
+    } else if (conditionLower.contains('storm') ||
+        conditionLower.contains('thunder')) {
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFF455A64).withOpacity(0.9),
+          const Color(0xFF263238).withOpacity(0.8),
+        ],
+      );
+    }
+
+    // Default gradient
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        colorScheme.primary.withOpacity(0.8),
+        colorScheme.primaryContainer.withOpacity(0.6),
+      ],
     );
   }
 }
