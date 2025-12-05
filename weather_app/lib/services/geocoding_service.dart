@@ -44,8 +44,10 @@ class GeocodingService {
         return [];
       }
 
+      // Normalize query: trim for case-insensitive search
+      final normalizedQuery = query.trim();
       final String url =
-          '${ApiConfig.baseUrl}/geo/1.0/direct?q=$query&limit=10&appid=${ApiConfig.apiKey}';
+          '${ApiConfig.baseUrl}/geo/1.0/direct?q=$normalizedQuery&limit=10&appid=${ApiConfig.apiKey}';
 
       final response = await http.get(Uri.parse(url)).timeout(
             const Duration(seconds: 5),

@@ -260,12 +260,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Select a city and navigate to details
   void _selectCity(String cityName, WidgetRef ref) async {
     final storage = ref.read(storageServiceProvider);
-    await storage.addToSearchHistory(cityName);
+
+    // Extract just the city name if it's a full displayName (e.g., "New York, US" -> "New York")
+    final actualCityName =
+        cityName.contains(',') ? cityName.split(',').first.trim() : cityName;
+
+    await storage.addToSearchHistory(actualCityName);
 
     if (mounted) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => WeatherDetailsScreen(cityName: cityName),
+          builder: (context) => WeatherDetailsScreen(cityName: actualCityName),
         ),
       );
     }
