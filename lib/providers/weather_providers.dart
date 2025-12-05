@@ -16,7 +16,7 @@ final storageServiceProvider = Provider((ref) {
 /// This StateProvider allows any widget to read the current temperature unit
 /// and subscribe to changes. When the user toggles between Celsius/Fahrenheit
 /// in settings, this provider notifies all listeners to rebuild with the new unit.
-/// 
+///
 /// The initial value is read from StorageService (persisted from previous sessions).
 final temperatureUnitProvider = StateProvider<String>((ref) {
   final storage = ref.watch(storageServiceProvider);
@@ -47,8 +47,9 @@ final weatherProvider =
 /// the current temperature unit setting.
 ///
 /// Usage: ref.watch(weatherByCoordinatesProvider((latitude: 51.5, longitude: -0.1)))
-final weatherByCoordinatesProvider = FutureProvider.family<WeatherModel,
-    ({double latitude, double longitude})>((ref, coords) async {
+final weatherByCoordinatesProvider =
+    FutureProvider.family<WeatherModel, ({double latitude, double longitude})>(
+        (ref, coords) async {
   final unit = ref.watch(temperatureUnitProvider);
   return WeatherService.getWeatherByCoordinates(
     latitude: coords.latitude,
