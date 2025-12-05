@@ -1,7 +1,15 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Service for managing local storage operations
+/// Manages all local device storage operations using SharedPreferences.
+///
+/// This service implements the singleton pattern to ensure only one instance
+/// manages device storage throughout the app's lifetime. It handles three main
+/// data types: favorite cities (list), temperature unit preference (string),
+/// and search history (list).
+///
+/// All data is stored as JSON strings in SharedPreferences and automatically
+/// serialized/deserialized to Dart collections.
 class StorageService {
   static final StorageService _instance = StorageService._internal();
 
@@ -11,25 +19,32 @@ class StorageService {
 
   static StorageService get instance => _instance;
 
+  // Storage keys used in SharedPreferences
   static const String _favoritesKey = 'favorite_cities';
   static const String _temperatureUnitKey = 'temperature_unit';
   static const String _searchHistoryKey = 'search_history';
 
   late SharedPreferences _prefs;
 
-  /// Initialize SharedPreferences
+  /// Initializes SharedPreferences. Must be called once at app startup
+  /// before any storage operations. This is done in main.dart.
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  /// Get list of favorite cities
+  /// Retrieves the list of favorite city names.
+  ///
+  /// Returns an empty list if no favorites have been saved yet.
   Future<List<String>> getFavoriteCities() async {
     final jsonString = _prefs.getString(_favoritesKey);
     if (jsonString == null) return [];
     return List<String>.from(jsonDecode(jsonString));
   }
 
-  /// Add a city to favorites
+  /// Adds a city to the favorites list if not already present.
+  ///
+  /// Duplicates are automatically prevented. Returns true if the operation
+  /// succeeded (city was added or was already in favorites).
   Future<bool> addFavorite(String cityName) async {
     final favorites = await getFavoriteCities();
     if (!favorites.contains(cityName)) {
@@ -39,25 +54,31 @@ class StorageService {
     return true;
   }
 
-  /// Remove a city from favorites
+  /// Removes a city from the favorites list.
+  ///
+  /// If the city is not in favorites, the list remains unchanged.
   Future<bool> removeFavorite(String cityName) async {
     final favorites = await getFavoriteCities();
     favorites.removeWhere((city) => city == cityName);
     return _prefs.setString(_favoritesKey, jsonEncode(favorites));
   }
 
-  /// Check if a city is in favorites
+  /// Checks whether a city is currently in the favorites list.
   Future<bool> isFavorite(String cityName) async {
     final favorites = await getFavoriteCities();
     return favorites.contains(cityName);
   }
 
-  /// Get temperature unit setting (metric or imperial)
+  /// Gets the user's temperature unit preference.
+  ///
+  /// Returns 'metric' (Celsius) by default if no preference has been set.
+  /// Can be 'metric' or 'imperial'.
   String getTemperatureUnit() {
     return _prefs.getString(_temperatureUnitKey) ?? 'metric';
   }
 
-  /// Set temperature unit (metric or imperial)
+  /// Sets the user's temperature unit preference.
+  ///
   Future<bool> setTemperatureUnit(String unit) {
     return _prefs.setString(_temperatureUnitKey, unit);
   }

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-/// Reusable weather card widget with minimal, modern design
+/// Displays a single weather metric in a card.
+///
+/// This widget is used throughout the app to show individual weather values
+/// (temperature, humidity, wind speed, etc.). It includes an icon, title,
+/// value, and unit in a clean Material Design 3 card.
 class WeatherCard extends StatelessWidget {
   final String title;
   final String value;
@@ -61,7 +65,10 @@ class WeatherCard extends StatelessWidget {
   }
 }
 
-/// Reusable error widget with smooth, minimal design
+/// Displays an error message with optional retry button.
+///
+/// Provides visual feedback when something goes wrong (city not found, network error, etc.)
+/// with a red icon, error message, and an optional retry button for the user to try again.
 class ErrorMessageWidget extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
@@ -128,7 +135,12 @@ class ErrorMessageWidget extends StatelessWidget {
   }
 }
 
-/// Loading indicator widget with smooth animation
+/// Loading indicator with pulsing animation and optional message.
+///
+/// Displays a circular progress indicator that scales up and down smoothly
+/// to create a pulse effect. An optional message can be displayed below
+/// the spinner (e.g., "Fetching weather..." or "Loading favorites...").
+/// This is used when the app is waiting for API responses.
 class LoadingWidget extends StatefulWidget {
   final String? message;
 
@@ -145,6 +157,7 @@ class _LoadingWidgetState extends State<LoadingWidget>
   @override
   void initState() {
     super.initState();
+    // Animation repeats every 1.5 seconds, creating a pulsing effect
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
@@ -164,6 +177,7 @@ class _LoadingWidgetState extends State<LoadingWidget>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Scale animation: spinner pulses from 95% to 105% of normal size
           ScaleTransition(
             scale: Tween<double>(begin: 0.95, end: 1.05).animate(
               CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -179,6 +193,7 @@ class _LoadingWidgetState extends State<LoadingWidget>
           ),
           if (widget.message != null) ...[
             const SizedBox(height: 20),
+            // Fade animation on message: fades in and out with the spinner
             FadeTransition(
               opacity: Tween<double>(begin: 0.7, end: 1.0).animate(
                 CurvedAnimation(parent: _controller, curve: Curves.easeInOut),

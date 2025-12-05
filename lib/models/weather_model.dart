@@ -1,25 +1,71 @@
-/// Weather data model for storing comprehensive weather information
+/// Represents comprehensive weather data for a city from OpenWeatherMap API.
+///
+/// This model captures 20 different weather metrics including temperature,
+/// atmospheric conditions, wind data, and location information. All fields
+/// are populated from the API response and used throughout the app for
+/// display and analysis.
 class WeatherModel {
+  /// City name from the API response
   final String cityName;
+
+  /// Current temperature in the specified unit (Celsius or Fahrenheit)
   final double temperature;
+
+  /// Human-readable weather description (e.g., "light rain", "clear sky")
   final String description;
+
+  /// Main weather category (e.g., "Rain", "Clear", "Clouds", "Snow", "Thunderstorm")
   final String weatherMain;
+
+  /// What the temperature feels like due to wind chill or humidity
   final double feelsLike;
+
+  /// Percentage of atmospheric humidity (0-100)
   final int humidity;
+
+  /// Wind speed in the specified unit (m/s for metric, mph for imperial)
   final double windSpeed;
+
+  /// Wind gust speed (sudden wind speed increase) - optional
   final double? windGust;
+
+  /// Wind direction in degrees (0-360) - optional
   final int? windDegree;
+
+  /// Cloud coverage percentage (0-100)
   final int cloudiness;
+
+  /// Atmospheric pressure in hPa
   final int pressure;
+
+  /// Maximum visibility distance in meters
   final int visibility;
+
+  /// Dew point temperature - optional
   final double? dewPoint;
+
+  /// Unix timestamp of sunrise time
   final int sunrise;
+
+  /// Unix timestamp of sunset time
   final int sunset;
+
+  /// URL to the weather icon from OpenWeatherMap
   final String iconUrl;
+
+  /// Geographic latitude of the city
   final double latitude;
+
+  /// Geographic longitude of the city
   final double longitude;
+
+  /// Timezone offset in seconds from UTC
   final int timezone;
+
+  /// Time when this weather data was retrieved
   final DateTime dateTime;
+
+  /// ISO 3166 country code (e.g., "US", "GB", "JP")
   final String countryCode;
 
   WeatherModel({
@@ -46,7 +92,16 @@ class WeatherModel {
     required this.countryCode,
   });
 
-  /// Factory constructor to create WeatherModel from API JSON response
+  /// Creates a WeatherModel from the OpenWeatherMap API JSON response.
+  ///
+  /// This factory method parses the nested JSON structure from the API and
+  /// extracts weather data into a strongly-typed Dart model. It uses null
+  /// coalescing operators to provide sensible defaults for missing fields.
+  ///
+  /// The API response includes nested objects for weather conditions, wind data,
+  /// system info (sunrise/sunset), and geographic coordinates. This method
+  /// flattens that structure into individual fields for easier access throughout
+  /// the app.
   factory WeatherModel.fromJson(Map<String, dynamic> json) {
     return WeatherModel(
       cityName: json['name'] ?? 'Unknown',
